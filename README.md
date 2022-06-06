@@ -1,22 +1,8 @@
-# Sergiy's Dotfiles
+# Sergiy's Dotfiles - Linux
 A collection of scripts used for OS bootstrap with Dev tools. 
 Initial idea and majority of the scripts have been cloned from Jessica Deen [dotfiles](https://github.com/jldeen/dotfiles) project.
 
-### Backstory
-These are mine dotfiles. You should modify yours to personalize your system.
-
-If you're interested in the philosophy behind why projects like these are awesome, you might want to [read Holman's post on the subject](http://zachholman.com/2010/08/dotfiles-are-meant-to-be-forked/).
-
-I liked Jessica's topic-centric approach she used for her dotfiles, so I used the same in my clone. The main idea is to have dedicated areas for tools I use and need to have configured, e.g. git, system libraries, and so on (check more below). I also followed Jessica's approach by splitting the code to the dedicated OS specific branches, e.g. Windows, Linux and MacOS, since those are my three environments.
-
-## Install
-There are four working branches here: main, win, linux and mac.
-
-- **main**: has general readme.md file with explanations how to use this repo.
-- **win**: instructions how to bootstrap Windows 10/11/x.
-- **linux**: instructions how to bootstrap Linux. Mostly tested on Ubuntu 20.04 LTS.
-- **mac**: instructions how to bootstrap macOS.
-
+## macOS configuration
 There are a couple of approaches that you may consider to take with this repo.
 
 ### Clone and modify repo (recommended)
@@ -39,21 +25,19 @@ The main file you'll want to change right off the bat is `zsh/zshrc.symlink`, wh
 
 ### Run configuration from my repo (not recommended)
 I would not recommend to use this approach. Not unless you accept all the modifications dotfiles are going to make to your system. Those are my modifications and you may not like them. Just saying.
-#### Windows Configuration
-Run the following to bootstrap Windows from scratch...
-```
-work in progress
-```
-#### Linux Configuration
-Run the following to bootstrap Linux from scratch...
-```
-work in progress
-```
-#### macOS Configuration
+
 Run the following to bootstrap macOS from scratch...
 ```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/stsyg/dotfiles/mac/configure.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/stsyg/dotfiles/linux/configure.sh)"
 ```
+
+### Backstory
+These are mine dotfiles. You should modify yours to personalize your system.
+
+If you're interested in the philosophy behind why projects like these are awesome, you might want to [read Holman's post on the subject](http://zachholman.com/2010/08/dotfiles-are-meant-to-be-forked/).
+
+I liked Jessica's topic-centric approach she used for her dotfiles, so I used the same in my clone. The main idea is to have dedicated areas for tools I use and need to have configured, e.g. git, system libraries, and so on (check more below). I also followed Jessica's approach by splitting the code to the dedicated OS specific branches, e.g. Windows, Linux and MacOS, since those are my three environments.
+
 ## Topics
 
 Here's more explanations about folders (topics) in the repo.
