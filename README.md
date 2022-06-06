@@ -1,4 +1,4 @@
-# Sergiy's Dotfiles
+# Sergiy's Dotfiles - macOS
 A collection of scripts used for OS bootstrap with Dev tools. 
 Initial idea and majority of the scripts have been cloned from Jessica Deen [dotfiles](https://github.com/jldeen/dotfiles) project.
 
