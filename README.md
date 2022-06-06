@@ -47,7 +47,7 @@ work in progress
 #### Linux Configuration
 Run the following to bootstrap Linux from scratch...
 ```
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/stsyg/dotfiles/linux/configure.sh)"
+work in progress
 ```
 #### macOS Configuration
 Run the following to bootstrap macOS from scratch...
