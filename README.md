@@ -2,7 +2,7 @@
 A collection of scripts used for OS bootstrap with Dev tools. 
 Initial idea and majority of the scripts have been cloned from Jessica Deen [dotfiles](https://github.com/jldeen/dotfiles) project.
 
-## macOS configuration
+## Linux configuration
 There are a couple of approaches that you may consider to take with this repo.
 
 ### Clone and modify repo (recommended)
@@ -21,12 +21,12 @@ Everything is configured and tweaked within `~/.dotfiles`.
 
 The main file you'll want to change right off the bat is `zsh/zshrc.symlink`, which sets up a few paths that'll be different on your particular machine. You also might want to configure `.tmux.conf` since I run a few scripts in the status bar.
 
-`dot` is a simple script that installs some dependencies, sets sane macOS defaults, and so on. Tweak this script, and occasionally run `dot` from time to time to keep your environment fresh and up-to-date. You can find this script in `bin/`.
+`dot` is a simple script that installs some dependencies, sets sane Linux defaults, and so on. Tweak this script, and occasionally run `dot` from time to time to keep your environment fresh and up-to-date. You can find this script in `bin/`.
 
 ### Run configuration from my repo (not recommended)
 I would not recommend to use this approach. Not unless you accept all the modifications dotfiles are going to make to your system. Those are my modifications and you may not like them. Just saying.
 
-Run the following to bootstrap macOS from scratch...
+Run the following to bootstrap Linux from scratch...
 ```
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/stsyg/dotfiles/linux/configure.sh)"
 ```
