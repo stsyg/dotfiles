@@ -1,6 +1,6 @@
 # Sergiy's Dotfiles
 A collection of scripts used for OS bootstrap with Dev tools. 
-Initial idea and majority of the scripts have been cloned from Jessica Deen [dotfiles](https://github.com/jldeen/dotfiles) repo.
+Initial idea and majority of the scripts have been cloned from Jessica Deen [dotfiles](https://github.com/jldeen/dotfiles) project.
 
 ### Backstory
 These are mine dotfiles. You should modify yours to personalize your system.
@@ -12,10 +12,10 @@ I liked Jessica's topic-centric approach she used for her dotfiles, so I used th
 ## Install
 There are four working branches here: main, win, linux and mac.
 
-- main: has general readme.md file with explanations how to use this repo.
-- win: instructions how to bootstrap Windows 10/11/x.
-- linux: instructions how to bootstrap Linux distro. Mostly tested on Ubuntu 20.04 LTS.
-- mac: instructions how to bootstrap macOS.
+- **main**: has general readme.md file with explanations how to use this repo.
+- **win**: instructions how to bootstrap Windows 10/11/x.
+- **linux**: instructions how to bootstrap Linux. Mostly tested on Ubuntu 20.04 LTS.
+- **mac**: instructions how to bootstrap macOS.
 
 There are a couple of approaches that you may consider to take with this repo.
 
