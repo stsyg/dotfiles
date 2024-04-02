@@ -127,7 +127,7 @@ curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 
 # Initialize Starship
 if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
-  echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
+  echo 'eval "$(~/.local/bin/starship init bash)"' >> /home/$username/.bashrc
 fi
 
 # Check if ~/.config/starship.toml exists and if not, copy one from the local folder
