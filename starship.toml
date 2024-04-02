@@ -7,6 +7,7 @@ $directory\
 $git_branch\
 $git_status\
 [](fg:#394260 bg:#212736)\
+$hostname\
 $git_state\
 $nodejs\
 $rust\
@@ -85,3 +86,9 @@ disabled = false
 time_format = "%I:%M%p" # Hour:Minute Format
 style = "bg:#1d2230"
 format = '[[  $time ](fg:#a0a9cb bg:#1d2230)]($style)'
+
+[hostname]
+ssh_only = false
+format = '[$ssh_symbol](bold blue) on [$hostname](bold red) '
+# trim_at = '.companyname.com'
+disabled = false
