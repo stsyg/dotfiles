@@ -127,7 +127,7 @@ mkdir -p $BIN_DIR
 curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 
 # Initialize Starship
-if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
+if ! grep -q 'eval "$(~/.local/bin/starship init bash)"' /home/$username/.bashrc; then
   echo 'eval "$(~/.local/bin/starship init bash)"' >> /home/$username/.bashrc
 fi
 
