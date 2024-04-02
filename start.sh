@@ -128,6 +128,6 @@ fi
 # Check if ~/.config/starship.toml exists and if not, copy one from the local folder
 if [ ! -f /home/$username/.config/starship.toml ]; then
   mkdir -p /home/$username/.config
-  cp $(dirname "$0")/starship.toml /home/$username/.config/starship.toml
+  wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
   chown $username:$username /home/$username/.config/starship.toml
 fi
