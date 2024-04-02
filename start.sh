@@ -17,7 +17,7 @@ sudo usermod -aG sudo $username
 sudo apt update -y && sudo apt upgrade -y
 
 # Install curl, git and fontconfig
-sudo apt install -y curl git
+sudo apt install -y curl git unzip
 sudo apt-get install fontconfig -y
 
 # Install Azure CLI
