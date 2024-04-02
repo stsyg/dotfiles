@@ -118,7 +118,7 @@ BIN_DIR=~/.local/bin
 mkdir -p $BIN_DIR
 
 # Install Starship
-BIN_DIR=$BIN_DIR sh -c "$(curl -fsSL https://starship.rs/install.sh)" -- -y
+curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
 
 # Initialize Starship
 if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
