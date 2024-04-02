@@ -103,6 +103,11 @@ if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
   echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
 fi
 
+# Source .bashrc from .bash_profile
+if ! grep -q 'source ~/.bashrc' /home/$username/.bash_profile; then
+  echo -e "\nif [ -f ~/.bashrc ]; then\n   source ~/.bashrc\nfi" >> /home/$username/.bash_profile
+fi
+
 # Get latest release tag from GitHub
 latest_release=$(curl --silent "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
