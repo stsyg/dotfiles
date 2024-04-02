@@ -17,7 +17,7 @@ sudo usermod -aG sudo $username
 sudo apt update -y && sudo apt upgrade -y
 
 # Install curl and git
-sudo apt install -y curl git
+sudo apt install -y curl git fontconfig
 
 # Install Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
