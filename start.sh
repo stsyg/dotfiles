@@ -3,6 +3,7 @@
 # Ask for input parameters, i.e. username, pubkey, etc.
 read -p "Please enter the username: " username
 read -p "Please enter your public key (optional): " pubkey
+read -p "Please enter your GitHub email: " gitemail
 
 # Check if username is empty
 if [ -z "$username" ]; then
@@ -19,6 +20,10 @@ sudo apt update -y && sudo apt upgrade -y
 # Install curl, git and fontconfig
 sudo apt install -y curl git unzip
 sudo apt-get install fontconfig -y
+
+# Configure Git
+git config --global user.email "$gitemail"
+git config --global user.name "$username"
 
 # Install Azure CLI
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
