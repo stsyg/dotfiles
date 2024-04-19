@@ -17,6 +17,13 @@ sudo usermod -aG sudo $username
 # Update and upgrade the system
 sudo apt update -y && sudo apt upgrade -y
 
+# Install kubectl command
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
+echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+
 # Install curl, git and fontconfig
 sudo apt install -y curl git unzip
 sudo apt-get install fontconfig -y
