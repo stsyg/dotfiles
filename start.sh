@@ -23,7 +23,6 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 
-
 # Install curl, git and fontconfig
 sudo apt install -y curl git unzip
 sudo apt-get install fontconfig -y
@@ -115,6 +114,12 @@ done
 if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
   echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
 fi
+
+# Install bash autocomplete
+sudo apt-get install bash-completion -y
+
+# Enable kubectl autocompletion
+echo 'source <(kubectl completion bash)' >>~/.bashrc
 
 # Source .bashrc from .bash_profile
 if ! grep -q 'source ~/.bashrc' /home/$username/.bash_profile; then
