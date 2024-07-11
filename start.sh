@@ -14,6 +14,9 @@ fi
 # Add user to sudo group
 sudo usermod -aG sudo $username
 
+# Add user to Docker group
+sudo usermod -aG docker $username
+
 # Update and upgrade the system
 sudo apt update -y && sudo apt upgrade -y
 
