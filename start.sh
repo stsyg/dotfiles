@@ -1,98 +1,113 @@
 #!/bin/bash
 
-# Ask for input parameters, i.e. username, pubkey, etc.
+# Ask for input parameters, i.e. username, pubkey, GitHub email
 read -p "Please enter the username: " username
 read -p "Please enter your public key (optional): " pubkey
 read -p "Please enter your GitHub email: " gitemail
 
-# Check if username is empty
+# Validate that username is provided
 if [ -z "$username" ]; then
-  echo "Error: Username is required"
+  echo "Error: Username is required."
   exit 1
 fi
 
-# Add user to sudo group
-sudo usermod -aG sudo $username
-
-# Add user to Docker group
-sudo usermod -aG docker $username
+# Add user to sudo and docker groups
+# Check if the user is already in the group to avoid redundant operations
+if ! groups $username | grep -q "\bsudo\b"; then
+  sudo usermod -aG sudo $username
+fi
+if ! groups $username | grep -q "\bdocker\b"; then
+  sudo usermod -aG docker $username
+fi
 
 # Update and upgrade the system
+echo "Updating and upgrading the system..."
 sudo apt update -y && sudo apt upgrade -y
 
-# Install kubectl command
+# Install curl, git, unzip, and fontconfig in one apt command to reduce repetition
+echo "Installing curl, git, unzip, and fontconfig..."
+sudo apt install -y curl git unzip fontconfig bash-completion
+
+# Configure Git with provided email and username
+echo "Configuring Git..."
+git config --global user.email "$gitemail"
+git config --global user.name "$username"
+
+# Install kubectl securely
+echo "Installing kubectl..."
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Install curl, git and fontconfig
-sudo apt install -y curl git unzip
-sudo apt-get install fontconfig -y
-
-# Configure Git
-git config --global user.email "$gitemail"
-git config --global user.name "$username"
+rm kubectl kubectl.sha256  # Clean up downloaded files
 
 # Install Azure CLI
+echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# Set up SSH key if pubkey is not empty
+# Handle public key upload securely
 if [ -n "$pubkey" ]; then
+  echo "Setting up SSH key for $username..."
   mkdir -p /home/$username/.ssh
   if ! grep -q "$pubkey" /home/$username/.ssh/authorized_keys; then
-    echo $pubkey >> /home/$username/.ssh/authorized_keys
+    echo "$pubkey" >> /home/$username/.ssh/authorized_keys
   fi
   chmod 700 /home/$username/.ssh
   chmod 600 /home/$username/.ssh/authorized_keys
   chown -R $username:$username /home/$username/.ssh
- 
-  # Update SSHD configuration
-  sudo sed -i 's/#PubkeyAuthentication yes/PubkeyAuthentication yes/' /etc/ssh/sshd_config
-  sudo sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config
-  sudo sed -i 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config
+  
+  # Update SSHD configuration securely
+  sudo sed -i '/^#PubkeyAuthentication/s/^#//; /^PubkeyAuthentication/s/ no/ yes/' /etc/ssh/sshd_config
+  sudo sed -i '/^#PasswordAuthentication/s/^#//; /^PasswordAuthentication/s/ yes/ no/' /etc/ssh/sshd_config
   sudo systemctl restart sshd
+else
+  echo "No public key provided. Skipping SSH key setup."
 fi
 
-# Update sudoers file
-if ! sudo grep -q "$username ALL=(ALL) NOPASSWD:ALL" /etc/sudoers.d/$username; then
-  echo "$username ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
+# Update sudoers file with NOPASSWD option, asking for confirmation
+read -p "Grant $username sudo access without password (y/n)? " sudo_nopass
+if [[ $sudo_nopass =~ ^[Yy]$ ]]; then
+  if ! sudo grep -q "$username ALL=(ALL) NOPASSWD:ALL" /etc/sudoers.d/$username; then
+    echo "$username ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
+  fi
+  sudo chmod 0440 /etc/sudoers.d/$username
+else
+  echo "You chose not to set NOPASSWD for $username."
 fi
-sudo chmod 0440 /etc/sudoers.d/$username
 
-# Set EDITOR environment variable
+# Set EDITOR environment variable if not already present
 if ! grep -q 'export EDITOR="/usr/bin/nano"' /home/$username/.bashrc; then
   echo 'export EDITOR="/usr/bin/nano"' >> /home/$username/.bashrc
 fi
 
-# Add ~/.local/bin to PATH
+# Ensure ~/.local/bin exists and is in PATH
 export PATH="$HOME/.local/bin:$PATH"
 
-# Ensure ~/repos exists
+# Ensure ~/repos directory exists and set appropriate ownership
 mkdir -p /home/$username/repos
 chown $username:$username /home/$username/repos
 
-# Clone tfenv repository
+# Clone tfenv repository if not already cloned
 if [ ! -d /home/$username/.tfenv ]; then
   git clone --depth=1 https://github.com/tfutils/tfenv.git /home/$username/.tfenv
   chown -R $username:$username /home/$username/.tfenv
+else
+  cd /home/$username/.tfenv && git pull
 fi
 
-# Add tfenv to PATH in ~/.bash_profile
+# Add tfenv to PATH in ~/.bash_profile and ~/.bashrc
 if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bash_profile; then
   echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bash_profile
 fi
-
-# Add tfenv to PATH in ~/.bashrc
 if ! grep -q 'export PATH=$PATH:$HOME/.tfenv/bin' /home/$username/.bashrc; then
   echo 'export PATH=$PATH:$HOME/.tfenv/bin' >> /home/$username/.bashrc
 fi
 
-# Ensure ~/.bash_aliases exists
+# Ensure ~/.bash_aliases exists and add custom aliases
 touch /home/$username/.bash_aliases
 chown $username:$username /home/$username/.bash_aliases
 
-# Define aliases
+# Define and add aliases to ~/.bash_aliases if not already present
 aliases=(
   'alias tf="terraform"'
   'alias tfi="terraform init"'
@@ -106,7 +121,6 @@ aliases=(
   'alias k="kubectl"'
 )
 
-# Add each alias to ~/.bash_aliases if it does not exist
 for alias in "${aliases[@]}"; do
   if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
     echo "$alias" >> /home/$username/.bash_aliases
@@ -118,9 +132,6 @@ if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
   echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
 fi
 
-# Install bash autocomplete
-sudo apt-get install bash-completion -y
-
 # Enable kubectl autocompletion
 echo 'source <(kubectl completion bash)' >>~/.bashrc
 
@@ -129,31 +140,59 @@ if ! grep -q 'source ~/.bashrc' /home/$username/.bash_profile; then
   echo -e "\nif [ -f ~/.bashrc ]; then\n   source ~/.bashrc\nfi" >> /home/$username/.bash_profile
 fi
 
-# Get latest release tag from GitHub
+# Install Meslo Nerd Font
 latest_release=$(curl --silent "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-
-# Download and install Meslo Nerd Font
 mkdir -p /home/$username/.fonts
-wget -q -O /home/$username/.fonts/Meslo.zip https://github.com/ryanoasis/nerd-fonts/releases/download/$latest_release/Meslo.zip
-unzip -o /home/$username/.fonts/Meslo.zip -d /home/$username/.fonts/
-rm /home/$username/.fonts/Meslo.zip
-fc-cache -fv
+if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
+  wget -q -O /home/$username/.fonts/Meslo.zip https://github.com/ryanoasis/nerd-fonts/releases/download/$latest_release/Meslo.zip
+  unzip -o /home/$username/.fonts/Meslo.zip -d /home/$username/.fonts/
+  rm /home/$username/.fonts/Meslo.zip
+  fc-cache -fv
+fi
 
-# Create BIN_DIR if it does not exist
+# Create BIN_DIR and install Starship prompt
 BIN_DIR=~/.local/bin
 mkdir -p $BIN_DIR
+curl -sS https://starship.rs/install.sh -o starship-install.sh
+chmod +x starship-install.sh
+./starship-install.sh -y -b ~/.local/bin
+rm starship-install.sh
 
-# Install Starship
-curl -sS https://starship.rs/install.sh | sh -s -- -y -b ~/.local/bin
-
-# Initialize Starship
+# Initialize Starship in .bashrc
 if ! grep -q 'eval "$(~/.local/bin/starship init bash)"' /home/$username/.bashrc; then
   echo 'eval "$(~/.local/bin/starship init bash)"' >> /home/$username/.bashrc
 fi
 
-# Check if ~/.config/starship.toml exists and if not, copy one from the local folder
+# Install Starship config if it doesn't exist
 if [ ! -f /home/$username/.config/starship.toml ]; then
   mkdir -p /home/$username/.config
   wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
   chown $username:$username /home/$username/.config/starship.toml
 fi
+
+# Add the welcome function to ~/.bashrc if not already present
+if ! grep -q "function welcome" /home/$username/.bashrc; then
+  echo 'function welcome() {' >> /home/$username/.bashrc
+  echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
+  echo '  echo " Welcome to your new terminal environment! "' >> /home/$username/.bashrc
+  echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
+  echo '  echo ""' >> /home/$username/.bashrc
+  echo '  echo "Here are some commands to get started:"' >> /home/$username/.bashrc
+  echo '  echo ""' >> /home/$username/.bashrc
+  echo '  echo "- Type \047alias\047 to see all the aliases available."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047tfenv install latest\047 to install the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047tfenv use latest\047 to use the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047kubectl version --client\047 to verify the installation of kubectl."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047git --version\047 to check your Git installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047az version\047 to check your Azure CLI installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047starship\047 to see your terminal prompt in action."' >> /home/$username/.bashrc
+  echo '  echo "- Type \047welcome\047 to see this message."' >> /home/$username/.bashrc
+  echo '  echo ""' >> /home/$username/.bashrc
+  echo '  echo "Make sure to reload your terminal or run \047source ~/.bashrc\047 to apply all changes."' >> /home/$username/.bashrc
+  echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
+  echo '}' >> /home/$username/.bashrc
+fi
+
+# Run the welcome function at the end of the bootstrap process
+source /home/$username/.bashrc
+welcome
