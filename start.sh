@@ -141,6 +141,11 @@ if [ ! -f /home/$username/.config/starship.toml ]; then
   chown $username:$username /home/$username/.config/starship.toml
 fi
 
+# Automatically append Starship init to .bashrc if it's not already present
+if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
+  echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
+fi
+
 # Add the welcome function to ~/.bashrc if not already present
 if ! grep -q "function welcome" /home/$username/.bashrc; then
   echo 'function welcome() {' >> /home/$username/.bashrc
@@ -164,7 +169,7 @@ if ! grep -q "function welcome" /home/$username/.bashrc; then
   echo '}' >> /home/$username/.bashrc
 fi
 
-## Ensure ~/.bash_aliases exists and add custom aliases
+# Ensure ~/.bash_aliases exists and add custom aliases
 touch /home/$username/.bash_aliases
 chown $username:$username /home/$username/.bash_aliases
 
