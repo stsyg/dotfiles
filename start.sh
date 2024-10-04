@@ -123,11 +123,11 @@ if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
 fi
 
 # Create BIN_DIR and install Starship prompt
-BIN_DIR=/home/$username/.local/bin
+BIN_DIR=~/.local/bin
 mkdir -p $BIN_DIR
 curl -sS https://starship.rs/install.sh -o starship-install.sh
 chmod +x starship-install.sh
-sudo -u $username ./starship-install.sh -y -b $BIN_DIR
+./starship-install.sh -s -- -y -b $BIN_DIR
 rm starship-install.sh
 
 # Initialize Starship in .bashrc, ensuring no duplication
