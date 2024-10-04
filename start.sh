@@ -12,7 +12,6 @@ if [ -z "$username" ]; then
 fi
 
 # Add user to sudo and docker groups
-# Check if the user is already in the group to avoid redundant operations
 if ! groups $username | grep -q "\bsudo\b"; then
   sudo usermod -aG sudo $username
 fi
@@ -55,7 +54,7 @@ if [ -n "$pubkey" ]; then
   chmod 700 /home/$username/.ssh
   chmod 600 /home/$username/.ssh/authorized_keys
   chown -R $username:$username /home/$username/.ssh
-  
+
   # Update SSHD configuration securely
   sudo sed -i '/^#PubkeyAuthentication/s/^#//; /^PubkeyAuthentication/s/ no/ yes/' /etc/ssh/sshd_config
   sudo sed -i '/^#PasswordAuthentication/s/^#//; /^PasswordAuthentication/s/ yes/ no/' /etc/ssh/sshd_config
@@ -103,8 +102,10 @@ if ! grep -q 'export PATH=$PATH:$HOME/.tfenv/bin' /home/$username/.bashrc; then
   echo 'export PATH=$PATH:$HOME/.tfenv/bin' >> /home/$username/.bashrc
 fi
 
-# Enable kubectl autocompletion
-echo 'source <(kubectl completion bash)' >>~/.bashrc
+# Enable kubectl autocompletion, check for duplication
+if ! grep -q 'source <(kubectl completion bash)' /home/$username/.bashrc; then
+  echo 'source <(kubectl completion bash)' >> /home/$username/.bashrc
+fi
 
 # Source .bashrc from .bash_profile
 if ! grep -q 'source ~/.bashrc' /home/$username/.bash_profile; then
@@ -122,16 +123,16 @@ if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
 fi
 
 # Create BIN_DIR and install Starship prompt
-BIN_DIR=~/.local/bin
+BIN_DIR=/home/$username/.local/bin
 mkdir -p $BIN_DIR
 curl -sS https://starship.rs/install.sh -o starship-install.sh
 chmod +x starship-install.sh
-./starship-install.sh -y -b ~/.local/bin
+sudo -u $username ./starship-install.sh -y -b $BIN_DIR
 rm starship-install.sh
 
-# Initialize Starship in .bashrc
-if ! grep -q 'eval "$(~/.local/bin/starship init bash)"' /home/$username/.bashrc; then
-  echo 'eval "$(~/.local/bin/starship init bash)"' >> /home/$username/.bashrc
+# Initialize Starship in .bashrc, ensuring no duplication
+if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
+  echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
 fi
 
 # Install Starship config if it doesn't exist
@@ -139,11 +140,6 @@ if [ ! -f /home/$username/.config/starship.toml ]; then
   mkdir -p /home/$username/.config
   wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
   chown $username:$username /home/$username/.config/starship.toml
-fi
-
-# Automatically append Starship init to .bashrc if it's not already present
-if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
-  echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
 fi
 
 # Add the welcome function to ~/.bashrc if not already present
