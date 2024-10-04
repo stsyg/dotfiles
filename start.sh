@@ -179,20 +179,19 @@ if ! grep -q "function welcome" /home/$username/.bashrc; then
   echo '  echo ""' >> /home/$username/.bashrc
   echo '  echo "Here are some commands to get started:"' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "- Type \047alias\047 to see all the aliases available."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047tfenv install latest\047 to install the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047tfenv use latest\047 to use the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047kubectl version --client\047 to verify the installation of kubectl."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047git --version\047 to check your Git installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047az version\047 to check your Azure CLI installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047starship\047 to see your terminal prompt in action."' >> /home/$username/.bashrc
-  echo '  echo "- Type \047welcome\047 to see this message."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''alias'\'' to see all the aliases available."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''tfenv install latest'\'' to install the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''tfenv use latest'\'' to use the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''kubectl version --client'\'' to verify the installation of kubectl."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''git --version'\'' to check your Git installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''az version'\'' to check your Azure CLI installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''starship'\'' to see your terminal prompt in action."' >> /home/$username/.bashrc
+  echo '  echo "- Type '\''welcome'\'' to see this message."' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "Make sure to reload your terminal or run \047source ~/.bashrc\047 to apply all changes."' >> /home/$username/.bashrc
+  echo '  echo "Make sure to reload your terminal or run '\''source ~/.bashrc'\'' to apply all changes."' >> /home/$username/.bashrc
   echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
   echo '}' >> /home/$username/.bashrc
 fi
 
-# Run the welcome function at the end of the bootstrap process
-source /home/$username/.bashrc
-welcome
+# Run the welcome function at the end of the bootstrap process for the correct user
+sudo -u $username bash -i -c 'welcome'
