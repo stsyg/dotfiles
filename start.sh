@@ -103,35 +103,6 @@ if ! grep -q 'export PATH=$PATH:$HOME/.tfenv/bin' /home/$username/.bashrc; then
   echo 'export PATH=$PATH:$HOME/.tfenv/bin' >> /home/$username/.bashrc
 fi
 
-# Ensure ~/.bash_aliases exists and add custom aliases
-touch /home/$username/.bash_aliases
-chown $username:$username /home/$username/.bash_aliases
-
-# Define and add aliases to ~/.bash_aliases if not already present
-aliases=(
-  'alias tf="terraform"'
-  'alias tfi="terraform init"'
-  'alias tfa="terraform apply -auto-approve"'
-  'alias tfp="terraform plan"'
-  'alias tfd="terraform destroy -auto-approve"'
-  'alias ga="git add ."'
-  'alias gc="git commit -m"'
-  'alias gp="git push"'
-  'alias ll="ls -la"'
-  'alias k="kubectl"'
-)
-
-for alias in "${aliases[@]}"; do
-  if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
-    echo "$alias" >> /home/$username/.bash_aliases
-  fi
-done
-
-# Source ~/.bash_aliases from ~/.bashrc
-if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
-  echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
-fi
-
 # Enable kubectl autocompletion
 echo 'source <(kubectl completion bash)' >>~/.bashrc
 
@@ -179,19 +150,49 @@ if ! grep -q "function welcome" /home/$username/.bashrc; then
   echo '  echo ""' >> /home/$username/.bashrc
   echo '  echo "Here are some commands to get started:"' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''alias'\'' to see all the aliases available."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''tfenv install latest'\'' to install the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''tfenv use latest'\'' to use the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''kubectl version --client'\'' to verify the installation of kubectl."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''git --version'\'' to check your Git installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''az version'\'' to check your Azure CLI installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''starship'\'' to see your terminal prompt in action."' >> /home/$username/.bashrc
-  echo '  echo "- Type '\''welcome'\'' to see this message."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"alias\" to see all the aliases available."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"tfenv install latest\" to install the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"tfenv use latest\" to use the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"kubectl version --client\" to verify the installation of kubectl."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"git --version\" to check your Git installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"az version\" to check your Azure CLI installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"starship\" to see your terminal prompt in action."' >> /home/$username/.bashrc
+  echo '  echo "- Type \"welcome\" to see this message."' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "Make sure to reload your terminal or run '\''source ~/.bashrc'\'' to apply all changes."' >> /home/$username/.bashrc
+  echo '  echo "Make sure to reload your terminal or run \"source ~/.bashrc\" to apply all changes."' >> /home/$username/.bashrc
   echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
   echo '}' >> /home/$username/.bashrc
 fi
 
-# Run the welcome function at the end of the bootstrap process for the correct user
-sudo -u $username bash -i -c 'welcome'
+## Ensure ~/.bash_aliases exists and add custom aliases
+touch /home/$username/.bash_aliases
+chown $username:$username /home/$username/.bash_aliases
+
+# Define and add aliases to ~/.bash_aliases if not already present
+aliases=(
+  'alias tf="terraform"'
+  'alias tfi="terraform init"'
+  'alias tfa="terraform apply -auto-approve"'
+  'alias tfp="terraform plan"'
+  'alias tfd="terraform destroy -auto-approve"'
+  'alias ga="git add ."'
+  'alias gc="git commit -m"'
+  'alias gp="git push"'
+  'alias ll="ls -la"'
+  'alias k="kubectl"'
+  'alias welcome="bash -i -c welcome"'  # Add the welcome alias
+)
+
+for alias in "${aliases[@]}"; do
+  if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
+    echo "$alias" >> /home/$username/.bash_aliases
+  fi
+done
+
+# Source ~/.bash_aliases from ~/.bashrc if it's not already sourced
+if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
+  echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
+fi
+
+# Source .bashrc to apply the new function in the current shell
+sudo -u $username bash -i -c 'source ~/.bashrc && welcome'
