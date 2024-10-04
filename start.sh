@@ -125,10 +125,7 @@ fi
 # Create BIN_DIR and install Starship prompt
 BIN_DIR=~/.local/bin
 mkdir -p $BIN_DIR
-curl -sS https://starship.rs/install.sh -o starship-install.sh
-chmod +x starship-install.sh
-./starship-install.sh -s -- -y -b $BIN_DIR
-rm starship-install.sh
+curl -sS https://starship.rs/install.sh | sh -s -- -y -b $BIN_DIR
 
 # Initialize Starship in .bashrc, ensuring no duplication
 if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
