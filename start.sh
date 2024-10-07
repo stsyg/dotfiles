@@ -188,6 +188,7 @@ aliases=(
   'alias gp="git push"'
   'alias ll="ls -la"'
   'alias k="kubectl"'
+  'alias k9="k9s"'
   'alias welcome="bash -i -c welcome"'  # Add the welcome alias
 )
 
