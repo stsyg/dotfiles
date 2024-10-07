@@ -79,8 +79,13 @@ if ! grep -q 'export EDITOR="/usr/bin/nano"' /home/$username/.bashrc; then
   echo 'export EDITOR="/usr/bin/nano"' >> /home/$username/.bashrc
 fi
 
-# Ensure ~/.local/bin exists and is in PATH
-export PATH="$HOME/.local/bin:$PATH"
+# Ensure ~/.local/bin exists and is in PATH in both .bashrc and .bash_profile
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' /home/$username/.bashrc; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$username/.bashrc
+fi
+if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' /home/$username/.bash_profile; then
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$username/.bash_profile
+fi
 
 # Ensure ~/repos directory exists and set appropriate ownership
 mkdir -p /home/$username/repos
@@ -98,8 +103,8 @@ fi
 if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bash_profile; then
   echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bash_profile
 fi
-if ! grep -q 'export PATH=$PATH:$HOME/.tfenv/bin' /home/$username/.bashrc; then
-  echo 'export PATH=$PATH:$HOME/.tfenv/bin' >> /home/$username/.bashrc
+if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bashrc; then
+  echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bashrc
 fi
 
 # Enable kubectl autocompletion, check for duplication
@@ -123,7 +128,7 @@ if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
 fi
 
 # Create BIN_DIR and install Starship prompt
-BIN_DIR=~/.local/bin
+BIN_DIR=/home/$username/.local/bin
 mkdir -p $BIN_DIR
 curl -sS https://starship.rs/install.sh | sh -s -- -y -b $BIN_DIR
 
@@ -148,14 +153,14 @@ if ! grep -q "function welcome" /home/$username/.bashrc; then
   echo '  echo ""' >> /home/$username/.bashrc
   echo '  echo "Here are some commands to get started:"' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "- Type \"alias\" to see all the aliases available."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"tfenv install latest\" to install the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"tfenv use latest\" to use the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"kubectl version --client\" to verify the installation of kubectl."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"git --version\" to check your Git installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"az version\" to check your Azure CLI installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"starship\" to see your terminal prompt in action."' >> /home/$username/.bashrc
-  echo '  echo "- Type \"welcome\" to see this message."' >> /home/$username/.bashrc
+  echo '  echo "- Type "alias" to see all the aliases available."' >> /home/$username/.bashrc
+  echo '  echo "- Type "tfenv install latest" to install the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type "tfenv use latest" to use the latest version of Terraform."' >> /home/$username/.bashrc
+  echo '  echo "- Type "k version --client" to verify the installation of kubectl."' >> /home/$username/.bashrc
+  echo '  echo "- Type "git --version" to check your Git installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type "az version" to check your Azure CLI installation."' >> /home/$username/.bashrc
+  echo '  echo "- Type "starship" to see your terminal prompt in action."' >> /home/$username/.bashrc
+  echo '  echo "- Type "welcome" to see this message."' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
   echo '  echo "Make sure to reload your terminal or run \"source ~/.bashrc\" to apply all changes."' >> /home/$username/.bashrc
   echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
