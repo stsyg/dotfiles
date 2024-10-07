@@ -40,6 +40,11 @@ echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 rm kubectl kubectl.sha256  # Clean up downloaded files
 
+# Install K9s
+echo "Installing K9s..."
+curl -sS https://webinstall.dev/k9s | bash
+source ~/.config/envman/PATH.env
+
 # Install Azure CLI
 echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
