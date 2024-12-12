@@ -149,11 +149,11 @@ if [ ! -f /home/$username/.config/starship.toml ]; then
   chown $username:$username /home/$username/.config/starship.toml
 fi
 
-# Add the welcome function to ~/.bashrc if not already present
-if ! grep -q "function welcome" /home/$username/.bashrc; then
-  echo 'function welcome() {' >> /home/$username/.bashrc
+# Add the hello function to ~/.bashrc if not already present
+if ! grep -q "function hello" /home/$username/.bashrc; then
+  echo 'function hello() {' >> /home/$username/.bashrc
   echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
-  echo '  echo " Welcome to your new terminal environment! "' >> /home/$username/.bashrc
+  echo '  echo " hello to your new terminal environment! "' >> /home/$username/.bashrc
   echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
   echo '  echo "Here are some commands to get started:"' >> /home/$username/.bashrc
@@ -165,7 +165,7 @@ if ! grep -q "function welcome" /home/$username/.bashrc; then
   echo '  echo "- Type "git --version" to check your Git installation."' >> /home/$username/.bashrc
   echo '  echo "- Type "az version" to check your Azure CLI installation."' >> /home/$username/.bashrc
   echo '  echo "- Type "starship" to see your terminal prompt in action."' >> /home/$username/.bashrc
-  echo '  echo "- Type "welcome" to see this message."' >> /home/$username/.bashrc
+  echo '  echo "- Type "hello" to see this message."' >> /home/$username/.bashrc
   echo '  echo ""' >> /home/$username/.bashrc
   echo '  echo "Make sure to reload your terminal or run \"source ~/.bashrc\" to apply all changes."' >> /home/$username/.bashrc
   echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
@@ -189,7 +189,7 @@ aliases=(
   'alias ll="ls -la"'
   'alias k="kubectl"'
   'alias k9="k9s"'
-  'alias welcome="bash -i -c welcome"'  # Add the welcome alias
+  'alias hello="bash -i -c hello"'  # Add the hello alias
 )
 
 for alias in "${aliases[@]}"; do
@@ -204,4 +204,4 @@ if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
 fi
 
 # Source .bashrc to apply the new function in the current shell
-sudo -u $username bash -i -c 'source ~/.bashrc && welcome'
+sudo -u $username bash -i -c 'source ~/.bashrc && hello'
