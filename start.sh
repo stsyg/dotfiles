@@ -132,6 +132,40 @@ if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
   fc-cache -fv
 fi
 
+# Install kubectx from Debian unstable safely
+echo "Setting up kubectx from Debian unstable..."
+
+# Add Debian unstable repo (only for kubectx)
+REPO_LINE="deb http://deb.debian.org/debian unstable main"
+REPO_FILE="/etc/apt/sources.list.d/unstable.list"
+
+if ! grep -q "$REPO_LINE" "$REPO_FILE" 2>/dev/null; then
+  echo "$REPO_LINE" | sudo tee "$REPO_FILE"
+fi
+
+# Pin all other packages to stable, but allow kubectx from unstable
+sudo tee /etc/apt/preferences.d/kubectx.pref > /dev/null <<EOF
+Package: *
+Pin: release a=stable
+Pin-Priority: 900
+
+Package: *
+Pin: release a=testing
+Pin-Priority: 400
+
+Package: *
+Pin: release a=unstable
+Pin-Priority: 300
+
+Package: kubectx
+Pin: release a=unstable
+Pin-Priority: 990
+EOF
+
+# Update and install kubectx
+sudo apt update
+sudo apt install -y -t unstable kubectx
+
 # Create BIN_DIR and install Starship prompt
 BIN_DIR=/home/$username/.local/bin
 mkdir -p $BIN_DIR
@@ -190,6 +224,9 @@ aliases=(
   'alias k="kubectl"'
   'alias k9="k9s"'
   'alias hello="bash -i -c hello"'  # Add the hello alias
+  'alias kctx="kubectx"'
+  'alias kns="kubens"'
+  'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
 )
 
 for alias in "${aliases[@]}"; do
