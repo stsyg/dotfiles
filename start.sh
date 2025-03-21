@@ -132,39 +132,43 @@ if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
   fc-cache -fv
 fi
 
-# Install kubectx from Debian unstable safely
-echo "Setting up kubectx from Debian unstable..."
+# Install kubectx from Debian Sid with proper GPG key setup
+echo "Setting up kubectx from Debian Sid..."
 
 # Add Debian unstable repo (only for kubectx)
-REPO_LINE="deb http://deb.debian.org/debian unstable main"
-REPO_FILE="/etc/apt/sources.list.d/unstable.list"
+REPO_LINE="deb http://deb.debian.org/debian sid main"
+REPO_FILE="/etc/apt/sources.list.d/debian-sid.list"
 
 if ! grep -q "$REPO_LINE" "$REPO_FILE" 2>/dev/null; then
   echo "$REPO_LINE" | sudo tee "$REPO_FILE"
 fi
 
-# Pin all other packages to stable, but allow kubectx from unstable
+# Add Debian archive GPG keys (required for Ubuntu to verify Debian repos)
+DEBIAN_KEYS_URL="https://ftp-master.debian.org/keys/archive-key-12.asc"
+TEMP_KEY_FILE="/tmp/debian-archive-key.asc"
+
+curl -fsSL "$DEBIAN_KEYS_URL" -o "$TEMP_KEY_FILE"
+gpg --dearmor < "$TEMP_KEY_FILE" | sudo tee /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg > /dev/null
+rm "$TEMP_KEY_FILE"
+
+# Pin everything else to Ubuntu, allow only kubectx from sid
 sudo tee /etc/apt/preferences.d/kubectx.pref > /dev/null <<EOF
 Package: *
-Pin: release a=stable
+Pin: release a=jammy
 Pin-Priority: 900
 
 Package: *
-Pin: release a=testing
-Pin-Priority: 400
-
-Package: *
-Pin: release a=unstable
-Pin-Priority: 300
+Pin: release a=sid
+Pin-Priority: 100
 
 Package: kubectx
-Pin: release a=unstable
+Pin: release a=sid
 Pin-Priority: 990
 EOF
 
-# Update and install kubectx
+# Update and install kubectx from sid
 sudo apt update
-sudo apt install -y -t unstable kubectx
+sudo apt install -y -t sid kubectx
 
 # Create BIN_DIR and install Starship prompt
 BIN_DIR=/home/$username/.local/bin
@@ -183,28 +187,32 @@ if [ ! -f /home/$username/.config/starship.toml ]; then
   chown $username:$username /home/$username/.config/starship.toml
 fi
 
-# Add the hello function to ~/.bashrc if not already present
-if ! grep -q "function hello" /home/$username/.bashrc; then
-  echo 'function hello() {' >> /home/$username/.bashrc
-  echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
-  echo '  echo " hello to your new terminal environment! "' >> /home/$username/.bashrc
-  echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
-  echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "Here are some commands to get started:"' >> /home/$username/.bashrc
-  echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "- Type "alias" to see all the aliases available."' >> /home/$username/.bashrc
-  echo '  echo "- Type "tfenv install latest" to install the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type "tfenv use latest" to use the latest version of Terraform."' >> /home/$username/.bashrc
-  echo '  echo "- Type "k version --client" to verify the installation of kubectl."' >> /home/$username/.bashrc
-  echo '  echo "- Type "git --version" to check your Git installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type "az version" to check your Azure CLI installation."' >> /home/$username/.bashrc
-  echo '  echo "- Type "starship" to see your terminal prompt in action."' >> /home/$username/.bashrc
-  echo '  echo "- Type "hello" to see this message."' >> /home/$username/.bashrc
-  echo '  echo ""' >> /home/$username/.bashrc
-  echo '  echo "Make sure to reload your terminal or run \"source ~/.bashrc\" to apply all changes."' >> /home/$username/.bashrc
-  echo '  echo "--------------------------------------------"' >> /home/$username/.bashrc
-  echo '}' >> /home/$username/.bashrc
+# Create ~/.hello.md with a welcome/help message
+HELLO_FILE="/home/$username/.hello.md"
+if [ ! -f "$HELLO_FILE" ]; then
+  cat << 'EOF' | tee "$HELLO_FILE" > /dev/null
+--------------------------------------------
+ hello to your new terminal environment! 
+--------------------------------------------
+
+Here are some commands to get started:
+
+- Type "alias" to see all the aliases available.
+- Type "tfenv install latest" to install the latest version of Terraform.
+- Type "tfenv use latest" to use the latest version of Terraform.
+- Type "k version --client" to verify the installation of kubectl.
+- Type "git --version" to check your Git installation.
+- Type "az version" to check your Azure CLI installation.
+- Type "starship" to see your terminal prompt in action.
+- Type "hello" to see this message again.
+
+Make sure to reload your terminal or run "source ~/.bashrc" to apply all changes.
+--------------------------------------------
+EOF
+
+  chown $username:$username "$HELLO_FILE"
 fi
+
 
 # Ensure ~/.bash_aliases exists and add custom aliases
 touch /home/$username/.bash_aliases
@@ -223,7 +231,7 @@ aliases=(
   'alias ll="ls -la"'
   'alias k="kubectl"'
   'alias k9="k9s"'
-  'alias hello="bash -i -c hello"'  # Add the hello alias
+  'alias hello="cat ~/.hello.md"'
   'alias kctx="kubectx"'
   'alias kns="kubens"'
   'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
