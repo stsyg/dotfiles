@@ -19,15 +19,45 @@ if ! groups $username | grep -q "\bdocker\b"; then
   sudo usermod -aG docker $username
 fi
 
-# Update and upgrade the system
+# Preconfigure: Add Debian Sid repo and GPG key (for kubectx)
+echo "Setting up Debian Sid repo for kubectx..."
+REPO_LINE="deb http://deb.debian.org/debian sid main"
+REPO_FILE="/etc/apt/sources.list.d/debian-sid.list"
+if ! grep -q "$REPO_LINE" "$REPO_FILE" 2>/dev/null; then
+  echo "$REPO_LINE" | sudo tee "$REPO_FILE"
+fi
+
+DEBIAN_KEYS_URL="https://ftp-master.debian.org/keys/archive-key-12.asc"
+TEMP_KEY_FILE="/tmp/debian-archive-key.asc"
+if [ ! -f /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg ]; then
+  curl -fsSL "$DEBIAN_KEYS_URL" -o "$TEMP_KEY_FILE"
+  gpg --dearmor < "$TEMP_KEY_FILE" | sudo tee /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg > /dev/null
+  rm "$TEMP_KEY_FILE"
+fi
+
+sudo tee /etc/apt/preferences.d/kubectx.pref > /dev/null <<EOF
+Package: *
+Pin: release a=jammy
+Pin-Priority: 900
+
+Package: *
+Pin: release a=sid
+Pin-Priority: 100
+
+Package: kubectx
+Pin: release a=sid
+Pin-Priority: 990
+EOF
+
+# Update and upgrade the system after adding all repos
 echo "Updating and upgrading the system..."
 sudo apt update -y && sudo apt upgrade -y
 
-# Install curl, git, unzip, and fontconfig in one apt command to reduce repetition
+# Install curl, git, unzip, and fontconfig in one apt command
 echo "Installing curl, git, unzip, and fontconfig..."
 sudo apt install -y curl git unzip fontconfig bash-completion
 
-# Configure Git with provided email and username
+# Configure Git
 echo "Configuring Git..."
 git config --global user.email "$gitemail"
 git config --global user.name "$username"
@@ -38,7 +68,7 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
 echo "$(cat kubectl.sha256)  kubectl" | sha256sum --check
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-rm kubectl kubectl.sha256  # Clean up downloaded files
+rm kubectl kubectl.sha256
 
 # Install K9s
 echo "Installing K9s..."
@@ -60,7 +90,6 @@ if [ -n "$pubkey" ]; then
   chmod 600 /home/$username/.ssh/authorized_keys
   chown -R $username:$username /home/$username/.ssh
 
-  # Update SSHD configuration securely
   sudo sed -i '/^#PubkeyAuthentication/s/^#//; /^PubkeyAuthentication/s/ no/ yes/' /etc/ssh/sshd_config
   sudo sed -i '/^#PasswordAuthentication/s/^#//; /^PasswordAuthentication/s/ yes/ no/' /etc/ssh/sshd_config
   sudo systemctl restart sshd
@@ -68,7 +97,7 @@ else
   echo "No public key provided. Skipping SSH key setup."
 fi
 
-# Update sudoers file with NOPASSWD option, asking for confirmation
+# Sudo without password
 read -p "Grant $username sudo access without password (y/n)? " sudo_nopass
 if [[ $sudo_nopass =~ ^[Yy]$ ]]; then
   if ! sudo grep -q "$username ALL=(ALL) NOPASSWD:ALL" /etc/sudoers.d/$username; then
@@ -79,12 +108,10 @@ else
   echo "You chose not to set NOPASSWD for $username."
 fi
 
-# Set EDITOR environment variable if not already present
+# Set EDITOR and PATH
 if ! grep -q 'export EDITOR="/usr/bin/nano"' /home/$username/.bashrc; then
   echo 'export EDITOR="/usr/bin/nano"' >> /home/$username/.bashrc
 fi
-
-# Ensure ~/.local/bin exists and is in PATH in both .bashrc and .bash_profile
 if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' /home/$username/.bashrc; then
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$username/.bashrc
 fi
@@ -92,19 +119,17 @@ if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' /home/$username/.bash_profil
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$username/.bash_profile
 fi
 
-# Ensure ~/repos directory exists and set appropriate ownership
+# Ensure ~/repos exists
 mkdir -p /home/$username/repos
 chown $username:$username /home/$username/repos
 
-# Clone tfenv repository if not already cloned
+# Install tfenv
 if [ ! -d /home/$username/.tfenv ]; then
   git clone --depth=1 https://github.com/tfutils/tfenv.git /home/$username/.tfenv
   chown -R $username:$username /home/$username/.tfenv
 else
   cd /home/$username/.tfenv && git pull
 fi
-
-# Add tfenv to PATH in ~/.bash_profile and ~/.bashrc
 if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bash_profile; then
   echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bash_profile
 fi
@@ -112,17 +137,17 @@ if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bashrc; the
   echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bashrc
 fi
 
-# Enable kubectl autocompletion, check for duplication
+# kubectl autocomplete
 if ! grep -q 'source <(kubectl completion bash)' /home/$username/.bashrc; then
   echo 'source <(kubectl completion bash)' >> /home/$username/.bashrc
 fi
 
-# Source .bashrc from .bash_profile
+# Source bashrc from bash_profile
 if ! grep -q 'source ~/.bashrc' /home/$username/.bash_profile; then
   echo -e "\nif [ -f ~/.bashrc ]; then\n   source ~/.bashrc\nfi" >> /home/$username/.bash_profile
 fi
 
-# Install Meslo Nerd Font
+# Install Nerd Fonts
 latest_release=$(curl --silent "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 mkdir -p /home/$username/.fonts
 if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
@@ -132,62 +157,23 @@ if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
   fc-cache -fv
 fi
 
-# Install kubectx from Debian Sid with proper GPG key setup
-echo "Setting up kubectx from Debian Sid..."
-
-# Add Debian unstable repo (only for kubectx)
-REPO_LINE="deb http://deb.debian.org/debian sid main"
-REPO_FILE="/etc/apt/sources.list.d/debian-sid.list"
-
-if ! grep -q "$REPO_LINE" "$REPO_FILE" 2>/dev/null; then
-  echo "$REPO_LINE" | sudo tee "$REPO_FILE"
-fi
-
-# Add Debian archive GPG keys (required for Ubuntu to verify Debian repos)
-DEBIAN_KEYS_URL="https://ftp-master.debian.org/keys/archive-key-12.asc"
-TEMP_KEY_FILE="/tmp/debian-archive-key.asc"
-
-curl -fsSL "$DEBIAN_KEYS_URL" -o "$TEMP_KEY_FILE"
-gpg --dearmor < "$TEMP_KEY_FILE" | sudo tee /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg > /dev/null
-rm "$TEMP_KEY_FILE"
-
-# Pin everything else to Ubuntu, allow only kubectx from sid
-sudo tee /etc/apt/preferences.d/kubectx.pref > /dev/null <<EOF
-Package: *
-Pin: release a=jammy
-Pin-Priority: 900
-
-Package: *
-Pin: release a=sid
-Pin-Priority: 100
-
-Package: kubectx
-Pin: release a=sid
-Pin-Priority: 990
-EOF
-
-# Update and install kubectx from sid
-sudo apt update
+# Install kubectx
 sudo apt install -y -t sid kubectx
 
-# Create BIN_DIR and install Starship prompt
+# Install Starship
 BIN_DIR=/home/$username/.local/bin
 mkdir -p $BIN_DIR
 curl -sS https://starship.rs/install.sh | sh -s -- -y -b $BIN_DIR
-
-# Initialize Starship in .bashrc, ensuring no duplication
 if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
   echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
 fi
-
-# Install Starship config if it doesn't exist
 if [ ! -f /home/$username/.config/starship.toml ]; then
   mkdir -p /home/$username/.config
   wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
   chown $username:$username /home/$username/.config/starship.toml
 fi
 
-# Create ~/.hello.md with a welcome/help message
+# Create ~/.hello.md
 HELLO_FILE="/home/$username/.hello.md"
 if [ ! -f "$HELLO_FILE" ]; then
   cat << 'EOF' | tee "$HELLO_FILE" > /dev/null
@@ -200,25 +186,25 @@ Here are some commands to get started:
 - Type "alias" to see all the aliases available.
 - Type "tfenv install latest" to install the latest version of Terraform.
 - Type "tfenv use latest" to use the latest version of Terraform.
-- Type "k version --client" to verify the installation of kubectl.
 - Type "git --version" to check your Git installation.
 - Type "az version" to check your Azure CLI installation.
 - Type "starship" to see your terminal prompt in action.
+- Type "k version --client" to verify the installation of kubectl.
+- Type "kctx" to switch between Kubernetes contexts.
+- Type "kns" to switch between Kubernetes namespaces.
+- Type "kctxns" to switch to the current namespace in your Kubernetes context.
+- Type "k9s" to launch the K9s terminal UI for Kubernetes.
 - Type "hello" to see this message again.
 
 Make sure to reload your terminal or run "source ~/.bashrc" to apply all changes.
 --------------------------------------------
 EOF
-
   chown $username:$username "$HELLO_FILE"
 fi
 
-
-# Ensure ~/.bash_aliases exists and add custom aliases
+# Setup aliases
 touch /home/$username/.bash_aliases
 chown $username:$username /home/$username/.bash_aliases
-
-# Define and add aliases to ~/.bash_aliases if not already present
 aliases=(
   'alias tf="terraform"'
   'alias tfi="terraform init"'
@@ -236,17 +222,14 @@ aliases=(
   'alias kns="kubens"'
   'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
 )
-
 for alias in "${aliases[@]}"; do
   if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
     echo "$alias" >> /home/$username/.bash_aliases
   fi
 done
-
-# Source ~/.bash_aliases from ~/.bashrc if it's not already sourced
 if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
   echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
 fi
 
-# Source .bashrc to apply the new function in the current shell
+# Show welcome message
 sudo -u $username bash -i -c 'source ~/.bashrc && hello'
