@@ -1,11 +1,10 @@
 #!/bin/bash
 
-# Ask for input parameters, i.e. username, pubkey, GitHub email
+# Ask for input parameters
 read -p "Please enter the username: " username
 read -p "Please enter your public key (optional): " pubkey
 read -p "Please enter your GitHub email: " gitemail
 
-# Validate that username is provided
 if [ -z "$username" ]; then
   echo "Error: Username is required."
   exit 1
@@ -19,41 +18,11 @@ if ! groups $username | grep -q "\bdocker\b"; then
   sudo usermod -aG docker $username
 fi
 
-# Preconfigure: Add Debian Sid repo and GPG key (for kubectx)
-echo "Setting up Debian Sid repo for kubectx..."
-REPO_LINE="deb http://deb.debian.org/debian sid main"
-REPO_FILE="/etc/apt/sources.list.d/debian-sid.list"
-if ! grep -q "$REPO_LINE" "$REPO_FILE" 2>/dev/null; then
-  echo "$REPO_LINE" | sudo tee "$REPO_FILE"
-fi
-
-DEBIAN_KEYS_URL="https://ftp-master.debian.org/keys/archive-key-12.asc"
-TEMP_KEY_FILE="/tmp/debian-archive-key.asc"
-if [ ! -f /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg ]; then
-  curl -fsSL "$DEBIAN_KEYS_URL" -o "$TEMP_KEY_FILE"
-  gpg --dearmor < "$TEMP_KEY_FILE" | sudo tee /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg > /dev/null
-  rm "$TEMP_KEY_FILE"
-fi
-
-sudo tee /etc/apt/preferences.d/kubectx.pref > /dev/null <<EOF
-Package: *
-Pin: release a=jammy
-Pin-Priority: 900
-
-Package: *
-Pin: release a=sid
-Pin-Priority: 100
-
-Package: kubectx
-Pin: release a=sid
-Pin-Priority: 990
-EOF
-
-# Update and upgrade the system after adding all repos
+# Update and upgrade system (before Debian repo)
 echo "Updating and upgrading the system..."
 sudo apt update -y && sudo apt upgrade -y
 
-# Install curl, git, unzip, and fontconfig in one apt command
+# Install base packages
 echo "Installing curl, git, unzip, and fontconfig..."
 sudo apt install -y curl git unzip fontconfig bash-completion
 
@@ -62,7 +31,7 @@ echo "Configuring Git..."
 git config --global user.email "$gitemail"
 git config --global user.name "$username"
 
-# Install kubectl securely
+# Install kubectl
 echo "Installing kubectl..."
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256"
@@ -79,13 +48,11 @@ source ~/.config/envman/PATH.env
 echo "Installing Azure CLI..."
 curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
 
-# Handle public key upload securely
+# SSH key setup
 if [ -n "$pubkey" ]; then
   echo "Setting up SSH key for $username..."
   mkdir -p /home/$username/.ssh
-  if ! grep -q "$pubkey" /home/$username/.ssh/authorized_keys; then
-    echo "$pubkey" >> /home/$username/.ssh/authorized_keys
-  fi
+  echo "$pubkey" >> /home/$username/.ssh/authorized_keys
   chmod 700 /home/$username/.ssh
   chmod 600 /home/$username/.ssh/authorized_keys
   chown -R $username:$username /home/$username/.ssh
@@ -97,86 +64,90 @@ else
   echo "No public key provided. Skipping SSH key setup."
 fi
 
-# Sudo without password
+# Sudo NOPASSWD
 read -p "Grant $username sudo access without password (y/n)? " sudo_nopass
 if [[ $sudo_nopass =~ ^[Yy]$ ]]; then
-  if ! sudo grep -q "$username ALL=(ALL) NOPASSWD:ALL" /etc/sudoers.d/$username; then
-    echo "$username ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
-  fi
+  echo "$username ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
   sudo chmod 0440 /etc/sudoers.d/$username
 else
   echo "You chose not to set NOPASSWD for $username."
 fi
 
-# Set EDITOR and PATH
-if ! grep -q 'export EDITOR="/usr/bin/nano"' /home/$username/.bashrc; then
-  echo 'export EDITOR="/usr/bin/nano"' >> /home/$username/.bashrc
-fi
-if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' /home/$username/.bashrc; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$username/.bashrc
-fi
-if ! grep -q 'export PATH="$HOME/.local/bin:$PATH"' /home/$username/.bash_profile; then
-  echo 'export PATH="$HOME/.local/bin:$PATH"' >> /home/$username/.bash_profile
-fi
+# Environment vars
+echo 'export EDITOR="/usr/bin/nano"' >> /home/$username/.bashrc
+echo 'export PATH="$HOME/.local/bin:$PATH"' | tee -a /home/$username/.bashrc /home/$username/.bash_profile
 
-# Ensure ~/repos exists
+# Create repos dir
 mkdir -p /home/$username/repos
 chown $username:$username /home/$username/repos
 
-# Install tfenv
+# Clone tfenv
 if [ ! -d /home/$username/.tfenv ]; then
   git clone --depth=1 https://github.com/tfutils/tfenv.git /home/$username/.tfenv
   chown -R $username:$username /home/$username/.tfenv
 else
   cd /home/$username/.tfenv && git pull
 fi
-if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bash_profile; then
-  echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bash_profile
-fi
-if ! grep -q 'export PATH="$HOME/.tfenv/bin:$PATH"' /home/$username/.bashrc; then
-  echo 'export PATH="$HOME/.tfenv/bin:$PATH"' >> /home/$username/.bashrc
-fi
 
-# kubectl autocomplete
-if ! grep -q 'source <(kubectl completion bash)' /home/$username/.bashrc; then
-  echo 'source <(kubectl completion bash)' >> /home/$username/.bashrc
-fi
+echo 'export PATH="$HOME/.tfenv/bin:$PATH"' | tee -a /home/$username/.bashrc /home/$username/.bash_profile
 
-# Source bashrc from bash_profile
-if ! grep -q 'source ~/.bashrc' /home/$username/.bash_profile; then
-  echo -e "\nif [ -f ~/.bashrc ]; then\n   source ~/.bashrc\nfi" >> /home/$username/.bash_profile
-fi
+# kubectl completion
+echo 'source <(kubectl completion bash)' >> /home/$username/.bashrc
 
-# Install Nerd Fonts
+# Ensure .bash_profile sources .bashrc
+echo -e "\nif [ -f ~/.bashrc ]; then\n   source ~/.bashrc\nfi" >> /home/$username/.bash_profile
+
+# Nerd Fonts
 latest_release=$(curl --silent "https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 mkdir -p /home/$username/.fonts
-if [ ! -f /home/$username/.fonts/Meslo.zip ]; then
-  wget -q -O /home/$username/.fonts/Meslo.zip https://github.com/ryanoasis/nerd-fonts/releases/download/$latest_release/Meslo.zip
-  unzip -o /home/$username/.fonts/Meslo.zip -d /home/$username/.fonts/
-  rm /home/$username/.fonts/Meslo.zip
-  fc-cache -fv
-fi
+wget -q -O /home/$username/.fonts/Meslo.zip https://github.com/ryanoasis/nerd-fonts/releases/download/$latest_release/Meslo.zip
+unzip -o /home/$username/.fonts/Meslo.zip -d /home/$username/.fonts/
+rm /home/$username/.fonts/Meslo.zip
+fc-cache -fv
 
-# Install kubectx
+# Install kubectx from Sid
+echo "Setting up kubectx from Debian Sid..."
+REPO_LINE="deb http://deb.debian.org/debian sid main"
+REPO_FILE="/etc/apt/sources.list.d/debian-sid.list"
+echo "$REPO_LINE" | sudo tee "$REPO_FILE"
+
+DEBIAN_KEYS_URL="https://ftp-master.debian.org/keys/archive-key-12.asc"
+TEMP_KEY_FILE="/tmp/debian-archive-key.asc"
+curl -fsSL "$DEBIAN_KEYS_URL" -o "$TEMP_KEY_FILE"
+gpg --dearmor < "$TEMP_KEY_FILE" | sudo tee /etc/apt/trusted.gpg.d/debian-archive-keyring.gpg > /dev/null
+rm "$TEMP_KEY_FILE"
+
+sudo tee /etc/apt/preferences.d/kubectx.pref > /dev/null <<EOF
+Package: *
+Pin: release a=jammy
+Pin-Priority: 900
+
+Package: *
+Pin: release a=sid
+Pin-Priority: 100
+
+Package: kubectx
+Pin: release a=sid
+Pin-Priority: 990
+EOF
+
+sudo apt update
 sudo apt install -y -t sid kubectx
 
-# Install Starship
+# Install Starship prompt
 BIN_DIR=/home/$username/.local/bin
 mkdir -p $BIN_DIR
 curl -sS https://starship.rs/install.sh | sh -s -- -y -b $BIN_DIR
-if ! grep -q 'eval "$(starship init bash)"' /home/$username/.bashrc; then
-  echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
-fi
-if [ ! -f /home/$username/.config/starship.toml ]; then
-  mkdir -p /home/$username/.config
-  wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
-  chown $username:$username /home/$username/.config/starship.toml
-fi
+echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
 
-# Create ~/.hello.md
+# Starship config
+mkdir -p /home/$username/.config
+wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
+chown -R $username:$username /home/$username/.config
+
+# hello.md (always overwrite)
 HELLO_FILE="/home/$username/.hello.md"
-if [ ! -f "$HELLO_FILE" ]; then
-  cat << 'EOF' | tee "$HELLO_FILE" > /dev/null
+cat << 'EOF' | sudo tee "$HELLO_FILE" > /dev/null
 --------------------------------------------
  hello to your new terminal environment! 
 --------------------------------------------
@@ -199,10 +170,9 @@ Here are some commands to get started:
 Make sure to reload your terminal or run "source ~/.bashrc" to apply all changes.
 --------------------------------------------
 EOF
-  chown $username:$username "$HELLO_FILE"
-fi
+chown $username:$username "$HELLO_FILE"
 
-# Setup aliases
+# Aliases
 touch /home/$username/.bash_aliases
 chown $username:$username /home/$username/.bash_aliases
 aliases=(
@@ -222,14 +192,16 @@ aliases=(
   'alias kns="kubens"'
   'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
 )
+
 for alias in "${aliases[@]}"; do
   if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
     echo "$alias" >> /home/$username/.bash_aliases
   fi
 done
+
 if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
   echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
 fi
 
-# Show welcome message
+# Display hello on first load
 sudo -u $username bash -i -c 'source ~/.bashrc && hello'
