@@ -145,6 +145,13 @@ mkdir -p /home/$username/.config
 wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
 chown -R $username:$username /home/$username/.config
 
+# Starship config
+mkdir -p /home/$username/.kube
+wget -O /home/$username/.kube/kubeconfig-manager.sh https://raw.githubusercontent.com/stsyg/dotfiles/linux/kubeconfig-manager.sh
+chown -R $username:$username /home/$username/.config
+chmod +x /home/$username/kubeconfig-manager.sh
+
+
 # hello.md (always overwrite)
 HELLO_FILE="/home/$username/.hello.md"
 cat << 'EOF' | sudo tee "$HELLO_FILE" > /dev/null
@@ -164,6 +171,7 @@ Here are some commands to get started:
 - Type "kctx" to switch between Kubernetes contexts.
 - Type "kns" to switch between Kubernetes namespaces.
 - Type "kctxns" to switch to the current namespace in your Kubernetes context.
+- Type "kcfg" to add/remove/list/export Kubernetes context.
 - Type "k9s" to launch the K9s terminal UI for Kubernetes.
 - Type "hello" to see this message again.
 
@@ -187,10 +195,11 @@ aliases=(
   'alias ll="ls -la"'
   'alias k="kubectl"'
   'alias k9="k9s"'
-  'alias hello="cat ~/.hello.md"'
   'alias kctx="kubectx"'
   'alias kns="kubens"'
   'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
+  'alias kcfg="$HOME/.kube/kubeconfig-manager.sh"'
+  'alias hello="cat ~/.hello.md"'
 )
 
 for alias in "${aliases[@]}"; do
