@@ -148,8 +148,8 @@ chown -R $username:$username /home/$username/.config
 # Starship config
 mkdir -p /home/$username/.kube
 wget -O /home/$username/.kube/kubeconfig-manager.sh https://raw.githubusercontent.com/stsyg/dotfiles/linux/kubeconfig-manager.sh
-chown -R $username:$username /home/$username/.config
-chmod +x /home/$username/kubeconfig-manager.sh
+chown -R $username:$username /home/$username/.kube
+chmod +x /home/$username/.kube/kubeconfig-manager.sh
 
 
 # hello.md (always overwrite)
