@@ -132,6 +132,8 @@ Pin-Priority: 990
 EOF
 
 sudo apt update
+sudo snap install yq
+sudo apt install fzf
 sudo apt install -y -t sid kubectx
 
 # Install Starship prompt
