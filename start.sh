@@ -93,6 +93,7 @@ echo 'export PATH="$HOME/.tfenv/bin:$PATH"' | tee -a /home/$username/.bashrc /ho
 
 # kubectl completion
 echo 'source <(kubectl completion bash)' >> /home/$username/.bashrc
+echo 'complete -o default -F __start_kubectl k' >>~/.bashrc
 
 # Ensure .bash_profile sources .bashrc
 echo -e "\nif [ -f ~/.bashrc ]; then\n   source ~/.bashrc\nfi" >> /home/$username/.bash_profile
@@ -135,6 +136,38 @@ sudo apt update
 sudo snap install yq
 sudo apt install fzf
 sudo apt install -y -t sid kubectx
+
+# Aliases
+touch /home/$username/.bash_aliases
+chown $username:$username /home/$username/.bash_aliases
+aliases=(
+  'alias tf="terraform"'
+  'alias tfi="terraform init"'
+  'alias tfa="terraform apply -auto-approve"'
+  'alias tfp="terraform plan"'
+  'alias tfd="terraform destroy -auto-approve"'
+  'alias ga="git add ."'
+  'alias gc="git commit -m"'
+  'alias gp="git push"'
+  'alias ll="ls -la"'
+  'alias k="kubectl"'
+  'alias k9="k9s"'
+  'alias kctx="kubectx"'
+  'alias kns="kubens"'
+  'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
+  'alias kcfg="$HOME/.kube/kubeconfig-manager.sh"'
+  'alias hello="cat ~/.hello.md"'
+)
+
+for alias in "${aliases[@]}"; do
+  if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
+    echo "$alias" >> /home/$username/.bash_aliases
+  fi
+done
+
+if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
+  echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
+fi
 
 # Install Starship prompt
 BIN_DIR=/home/$username/.local/bin
@@ -181,38 +214,6 @@ Make sure to reload your terminal or run "source ~/.bashrc" to apply all changes
 --------------------------------------------
 EOF
 chown $username:$username "$HELLO_FILE"
-
-# Aliases
-touch /home/$username/.bash_aliases
-chown $username:$username /home/$username/.bash_aliases
-aliases=(
-  'alias tf="terraform"'
-  'alias tfi="terraform init"'
-  'alias tfa="terraform apply -auto-approve"'
-  'alias tfp="terraform plan"'
-  'alias tfd="terraform destroy -auto-approve"'
-  'alias ga="git add ."'
-  'alias gc="git commit -m"'
-  'alias gp="git push"'
-  'alias ll="ls -la"'
-  'alias k="kubectl"'
-  'alias k9="k9s"'
-  'alias kctx="kubectx"'
-  'alias kns="kubens"'
-  'alias kctxns="kubectx $(kubectl config view --minify -o jsonpath="{..namespace}")"'
-  'alias kcfg="$HOME/.kube/kubeconfig-manager.sh"'
-  'alias hello="cat ~/.hello.md"'
-)
-
-for alias in "${aliases[@]}"; do
-  if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
-    echo "$alias" >> /home/$username/.bash_aliases
-  fi
-done
-
-if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
-  echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
-fi
 
 # Display hello on first load
 sudo -u $username bash -i -c 'source ~/.bashrc && hello'
