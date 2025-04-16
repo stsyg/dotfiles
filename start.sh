@@ -24,7 +24,7 @@ sudo apt update -y && sudo apt upgrade -y
 
 # Install base packages
 echo "Installing curl, git, unzip, and fontconfig..."
-sudo apt install -y curl git unzip fontconfig bash-completion
+sudo apt install -y curl git unzip fontconfig bash-completion bat
 
 # Configure Git
 echo "Configuring Git..."
@@ -150,6 +150,7 @@ aliases=(
   'alias gc="git commit -m"'
   'alias gp="git push"'
   'alias ll="ls -la"'
+  'alias cat="batcat"'
   'alias k="kubectl"'
   'alias k9="k9s"'
   'alias kctx="kubectx"'
