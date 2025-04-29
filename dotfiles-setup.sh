@@ -30,8 +30,8 @@ yay -S --noconfirm \
   visual-studio-code-bin \
   yq
 
-echo ">> Setting up user groups (wheel, docker)..."
-sudo usermod -aG wheel,docker $username
+# echo ">> Setting up user groups (wheel, docker)..."
+# sudo usermod -aG wheel,docker $username
 
 echo ">> Configuring Git..."
 git config --global user.name "$username"
