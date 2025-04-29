@@ -58,54 +58,7 @@ echo ">> Installing essential packages..."
 # ttf-nerd-fonts-symbols       # Nerd fonts (icons in status bars, terminals)
 # ------------------------------------------------------------------------------------------
 sudo pacman -S --noconfirm \
-  base-devel \
-  git \
-  curl \
-  wget \
-  unzip \
-  zip \
-  vim \
-  zsh \
-  starship \
-  bat \
-  fd \
-  ripgrep \
-  fzf \
-  htop \
-  lsd \
-  reflector \
-  bash-completion \
-  tmux \
-  neovim \
-  alacritty \
-  rofi \
-  waybar \
-  hyprland \
-  lightdm \
-  lightdm-gtk-greeter \
-  iwd \
-  pipewire \
-  pipewire-pulse \
-  pipewire-alsa \
-  pipewire-jack \
-  wireplumber \
-  dunst \
-  grim \
-  slurp \
-  swappy \
-  wl-clipboard \
-  brightnessctl \
-  playerctl \
-  xdg-desktop-portal-hyprland \
-  thunar \
-  thunar-archive-plugin \
-  file-roller \
-  p7zip \
-  unrar \
-  noto-fonts \
-  ttf-liberation \
-  ttf-jetbrains-mono \
-  ttf-nerd-fonts-symbols
+base-devel git curl wget unzip zip vim zsh starship bat fd ripgrep fzf htop lsd reflector bash-completion tmux neovim alacritty rofi waybar hyprland lightdm lightdm-gtk-greeter iwd pipewire pipewire-pulse pipewire-alsa pipewire-jack wireplumber dunst grim slurp swappy wl-clipboard brightnessctl playerctl xdg-desktop-portal-hyprland thunar thunar-archive-plugin file-roller p7zip unrar noto-fonts ttf-liberation ttf-jetbrains-mono ttf-nerd-fonts-symbols
 
 echo ">> Enabling essential services..."
 sudo systemctl enable lightdm            # Enable login screen
