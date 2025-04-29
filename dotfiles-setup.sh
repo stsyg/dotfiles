@@ -28,7 +28,34 @@ yay -S --noconfirm \
   zoom \
   obsidian \
   visual-studio-code-bin \
+  lightdm-webkit2-greeter \
+  lightdm-webkit-theme-litarvan \
   yq
+
+echo ">> Installing prettier LightDM greeter..."
+
+# Install LightDM webkit2 greeter and a nice theme (Litarvan)
+yay -S --noconfirm lightdm-webkit2-greeter lightdm-webkit-theme-litarvan
+
+# Configure LightDM to use the webkit2 greeter
+LIGHTDM_CONF="/etc/lightdm/lightdm.conf"
+if grep -q "^#greeter-session=" "$LIGHTDM_CONF"; then
+  sudo sed -i 's|^#greeter-session=.*|greeter-session=lightdm-webkit2-greeter|' "$LIGHTDM_CONF"
+elif grep -q "^greeter-session=" "$LIGHTDM_CONF"; then
+  sudo sed -i 's|^greeter-session=.*|greeter-session=lightdm-webkit2-greeter|' "$LIGHTDM_CONF"
+else
+  echo -e "\n[Seat:*]\ngreeter-session=lightdm-webkit2-greeter" | sudo tee -a "$LIGHTDM_CONF"
+fi
+
+# Set theme to litarvan
+LIGHTDM_WEBKIT_CONF="/etc/lightdm/lightdm-webkit2-greeter.conf"
+if [ -f "$LIGHTDM_WEBKIT_CONF" ]; then
+  sudo sed -i 's|^webkit-theme *=.*|webkit-theme = litarvan|' "$LIGHTDM_WEBKIT_CONF" || echo -e "[greeter]\nwebkit-theme = litarvan" | sudo tee "$LIGHTDM_WEBKIT_CONF"
+else
+  echo -e "[greeter]\nwebkit-theme = litarvan" | sudo tee "$LIGHTDM_WEBKIT_CONF"
+fi
+
+echo ">> LightDM WebKit greeter set to 'litarvan'. Will apply on next boot."
 
 echo ">> Installing GitHub CLI..."
 sudo pacman -S --noconfirm github-cli
@@ -182,6 +209,12 @@ set -g mouse on
 EOF
 
 chown $username:$username /home/$username/.tmux.conf
+
+echo ">> Installing Hyprland config..."
+mkdir -p /home/$username/.config/hypr
+wget -O /home/$username/.config/hypr/hyprland.conf https://raw.githubusercontent.com/stsyg/dotfiles/linux/hyprland.conf
+chown -R $username:$username /home/$username/.config/hypr
+
 
 echo ">> Setting up aliases..."
 
