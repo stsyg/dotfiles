@@ -12,13 +12,6 @@ if [ -z "$username" ]; then
   exit 1
 fi
 
-echo ">> Setting up user groups (wheel, docker)..."
-sudo usermod -aG wheel,docker $username
-
-echo ">> Configuring Git..."
-git config --global user.name "$username"
-git config --global user.email "$gitemail"
-
 echo ">> Installing development tools..."
 yay -S --noconfirm \
   kubectl \
@@ -36,6 +29,13 @@ yay -S --noconfirm \
   obsidian \
   visual-studio-code-bin \
   yq
+
+echo ">> Setting up user groups (wheel, docker)..."
+sudo usermod -aG wheel,docker $username
+
+echo ">> Configuring Git..."
+git config --global user.name "$username"
+git config --global user.email "$gitemail"
 
 echo ">> Setting Zsh as default shell..."
 chsh -s /bin/zsh $username
