@@ -48,14 +48,23 @@ fi
 echo 'export PATH="$HOME/.tfenv/bin:$PATH"' | tee -a /home/$username/.zshrc /home/$username/.bashrc
 
 echo ">> Setting up Starship prompt..."
+
+# Ensure config and bin directories exist
 mkdir -p /home/$username/.config
+mkdir -p /home/$username/.local/bin
+chown -R $username:$username /home/$username/.local
+
+# Install Starship using the official script as the target user
 sudo -u $username curl -sS https://starship.rs/install.sh | sh -s -- -y -b /home/$username/.local/bin
+
+# Initialize Starship in both Zsh and Bash
 echo 'eval "$(starship init zsh)"' >> /home/$username/.zshrc
 echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
 
-# Download custom starship config
-wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
+# Download custom Starship config
+sudo -u $username wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
 chown -R $username:$username /home/$username/.config
+
 
 # Setup SSH public key if provided
 if [ -n "$pubkey" ]; then
