@@ -30,8 +30,8 @@ yay -S --noconfirm \
   visual-studio-code-bin \
   yq
 
-# echo ">> Setting up user groups (wheel, docker)..."
-# sudo usermod -aG wheel,docker $username
+echo ">> Installing GitHub CLI..."
+sudo pacman -S --noconfirm github-cli
 
 echo ">> Configuring Git..."
 git config --global user.name "$username"
@@ -46,6 +46,9 @@ if [ ! -d "/home/$username/.tfenv" ]; then
 fi
 
 echo 'export PATH="$HOME/.tfenv/bin:$PATH"' | tee -a /home/$username/.zshrc /home/$username/.bashrc
+
+echo ">> Setting up user groups (wheel, docker)..."
+sudo usermod -aG wheel,docker $username
 
 echo ">> Setting up Starship prompt..."
 
@@ -65,7 +68,6 @@ echo 'eval "$(starship init bash)"' >> /home/$username/.bashrc
 sudo -u $username wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
 chown -R $username:$username /home/$username/.config
 
-
 # Setup SSH public key if provided
 if [ -n "$pubkey" ]; then
   echo ">> Adding SSH key..."
@@ -79,40 +81,6 @@ fi
 # Setup Docker group access
 sudo systemctl enable docker
 sudo systemctl start docker
-
-echo ">> Setting up aliases..."
-touch /home/$username/.bash_aliases
-chown $username:$username /home/$username/.bash_aliases
-
-aliases=(
-  'alias tf="terraform"'
-  'alias tfi="terraform init"'
-  'alias tfa="terraform apply -auto-approve"'
-  'alias tfp="terraform plan"'
-  'alias tfd="terraform destroy -auto-approve"'
-  'alias ga="git add ."'
-  'alias gc="git commit -m"'
-  'alias gp="git push"'
-  'alias ll="ls -la"'
-  'alias cat="batcat"'
-  'alias k="kubectl"'
-  'alias k9="k9s"'
-  'alias kctx="kubectx"'
-  'alias kns="kubens"'
-  'alias kcfg="$HOME/.kube/kubeconfig-manager.sh"'
-  'alias hello="cat ~/.hello.md"'
-)
-
-for alias in "${aliases[@]}"; do
-  if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
-    echo "$alias" >> /home/$username/.bash_aliases
-  fi
-done
-
-# Source bash aliases automatically
-if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
-  echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
-fi
 
 # Download kubeconfig manager
 mkdir -p /home/$username/.kube
@@ -132,12 +100,20 @@ cat << 'EOF' | tee /home/$username/.hello.md > /dev/null
 
 Useful commands:
 
-- tfenv install latest && tfenv use latest
-- k9s to manage Kubernetes clusters
-- az login to log into Azure
-- starship to enjoy your prompt
-- code . to launch VSCode
-- hello to show this message
+- Type "alias" to see all the aliases available.
+- Type "tfenv install latest" to install the latest version of Terraform.
+- Type "tfenv use latest" to use the latest version of Terraform.
+- Type "git --version" to check your Git installation.
+- Type "gh auth login" to login to GitHub CLI.
+- Type "az version" to check your Azure CLI installation.
+- Type "starship" to see your terminal prompt in action.
+- Type "k version --client" to verify the installation of kubectl.
+- Type "kctx" to switch between Kubernetes contexts.
+- Type "kns" to switch between Kubernetes namespaces.
+- Type "kctxns" to switch to the current namespace in your Kubernetes context.
+- Type "kcfg" to add/remove/list/export Kubernetes context.
+- Type "k9s" to launch the K9s terminal UI for Kubernetes.
+- Type "hello" to see this message again.
 
 Reload terminal or run "source ~/.zshrc" to apply all changes.
 --------------------------------------------
@@ -206,5 +182,60 @@ set -g mouse on
 EOF
 
 chown $username:$username /home/$username/.tmux.conf
+
+echo ">> Setting up aliases..."
+
+# Create .bash_aliases and ensure permissions
+touch /home/$username/.bash_aliases
+chown $username:$username /home/$username/.bash_aliases
+
+# Define aliases
+aliases=(
+  'alias tf="terraform"'
+  'alias tfi="terraform init"'
+  'alias tfa="terraform apply -auto-approve"'
+  'alias tfp="terraform plan"'
+  'alias tfd="terraform destroy -auto-approve"'
+  'alias ga="git add ."'
+  'alias gc="git commit -m"'
+  'alias gp="git push"'
+  'alias ll="ls -la"'
+  'alias cat="bat"'  # updated from batcat
+  'alias k="kubectl"'
+  'alias k9="k9s"'
+  'alias kctx="kubectx"'
+  'alias kns="kubens"'
+  'alias kcfg="$HOME/.kube/kubeconfig-manager.sh"'
+  'alias hello="cat ~/.hello.md"'
+)
+
+# Write aliases if not already present
+for alias in "${aliases[@]}"; do
+  if ! grep -Fxq "$alias" /home/$username/.bash_aliases; then
+    echo "$alias" >> /home/$username/.bash_aliases
+  fi
+done
+
+# Make sure bash sources aliases
+if ! grep -q 'source ~/.bash_aliases' /home/$username/.bashrc; then
+  echo 'if [ -f ~/.bash_aliases ]; then . ~/.bash_aliases; fi' >> /home/$username/.bashrc
+fi
+
+# Copy to .zsh_aliases for Zsh use
+cp /home/$username/.bash_aliases /home/$username/.zsh_aliases
+
+# Ensure .zshrc exists and sources aliases
+touch /home/$username/.zshrc
+ZSHRC="/home/$username/.zshrc"
+ZSH_ALIASES_LINE='[[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases'
+grep -qxF "$ZSH_ALIASES_LINE" "$ZSHRC" || echo "$ZSH_ALIASES_LINE" >> "$ZSHRC"
+
+# Fix permissions
+chown $username:$username /home/$username/.zsh_aliases
+chown $username:$username "$ZSHRC"
+
+# Set default shell to Zsh
+echo ">> Switching default shell to Zsh for user: $username"
+chsh -s /bin/zsh "$username"
 
 echo ">> All post-install configuration is complete!"
