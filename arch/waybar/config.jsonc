@@ -1,0 +1,22 @@
+{
+    "layer": "top",
+    "position": "top",
+    "modules-left": [
+        "clock"
+    ],
+    "modules-center": [],
+    "modules-right": [
+        "custom/network",
+        "cpu",
+        "memory",
+        "temperature",
+        "battery",
+        "pulseaudio",
+        "tray"
+    ],
+    "custom/network": {
+        "exec": "~/.config/waybar/scripts/wifi.sh",
+        "interval": 10,
+        "return-type": "json"
+    }
+}
