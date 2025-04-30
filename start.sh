@@ -181,7 +181,7 @@ mkdir -p /home/$username/.config
 wget -O /home/$username/.config/starship.toml https://raw.githubusercontent.com/stsyg/dotfiles/linux/starship.toml
 chown -R $username:$username /home/$username/.config
 
-# Starship config
+# Kubeconfig manager
 mkdir -p /home/$username/.kube
 wget -O /home/$username/.kube/kubeconfig-manager.sh https://raw.githubusercontent.com/stsyg/dotfiles/linux/kubeconfig-manager.sh
 chown -R $username:$username /home/$username/.kube

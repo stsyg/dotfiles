@@ -86,12 +86,10 @@ if [ ! -d "/home/$username/.tfenv" ]; then
 fi
 
 # Add to groups
+echo ">> Setting up user groups (wheel, docker)..."
 sudo usermod -aG wheel,docker $username
 
 echo 'export PATH="$HOME/.tfenv/bin:$PATH"' | tee -a /home/$username/.zshrc /home/$username/.bashrc
-
-echo ">> Setting up user groups (wheel, docker)..."
-sudo usermod -aG wheel,docker $username
 
 # Starship Prompt
 echo ">> Setting up Starship..."
