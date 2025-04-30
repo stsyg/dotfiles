@@ -119,7 +119,7 @@ sudo systemctl start docker
 
 # Download Kubeconfig manager
 mkdir -p /home/$username/.kube
-wget -O /home/$username/.kube/kubeconfig-manager.sh https://raw.githubusercontent.com/stsyg/dotfiles/linux/kubeconfig-manager.sh
+wget -O /home/$username/.kube/kubeconfig-manager.sh https://raw.githubusercontent.com/stsyg/dotfiles/linux/kubeconfig/kubeconfig-manager.sh
 chmod +x /home/$username/.kube/kubeconfig-manager.sh
 chown -R $username:$username /home/$username/.kube
 
