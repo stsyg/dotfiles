@@ -30,6 +30,8 @@ yay -S --noconfirm \
   visual-studio-code-bin \
   lightdm-webkit2-greeter \
   lightdm-webkit-theme-litarvan \
+  swaybg \
+  cliphist \
   yq
 
 echo ">> Installing prettier LightDM greeter..."
@@ -39,12 +41,17 @@ yay -S --noconfirm lightdm-webkit2-greeter lightdm-webkit-theme-litarvan
 
 # Configure LightDM to use the webkit2 greeter
 LIGHTDM_CONF="/etc/lightdm/lightdm.conf"
-if grep -q "^#greeter-session=" "$LIGHTDM_CONF"; then
+
+if ! grep -q '^\[Seat:\*\]' "$LIGHTDM_CONF"; then
+  echo -e "\n[Seat:*]" | sudo tee -a "$LIGHTDM_CONF"
+fi
+
+if grep -q '^#greeter-session=' "$LIGHTDM_CONF"; then
   sudo sed -i 's|^#greeter-session=.*|greeter-session=lightdm-webkit2-greeter|' "$LIGHTDM_CONF"
-elif grep -q "^greeter-session=" "$LIGHTDM_CONF"; then
+elif grep -q '^greeter-session=' "$LIGHTDM_CONF"; then
   sudo sed -i 's|^greeter-session=.*|greeter-session=lightdm-webkit2-greeter|' "$LIGHTDM_CONF"
 else
-  echo -e "\n[Seat:*]\ngreeter-session=lightdm-webkit2-greeter" | sudo tee -a "$LIGHTDM_CONF"
+  sudo sed -i '/^\[Seat:\*\]/a greeter-session=lightdm-webkit2-greeter' "$LIGHTDM_CONF"
 fi
 
 # Set theme to litarvan
@@ -57,6 +64,54 @@ fi
 
 echo ">> LightDM WebKit greeter set to 'litarvan'. Will apply on next boot."
 
+echo ">> Installing and configuring Waybar..."
+
+# Disable systemd Waybar service to avoid duplicate bars
+sudo -u "$username" systemctl --user disable waybar --now 2>/dev/null || true
+
+# Create Waybar config directories
+WAYBAR_DIR="/home/$username/.config/waybar"
+WAYBAR_SCRIPTS="$WAYBAR_DIR/scripts"
+mkdir -p "$WAYBAR_SCRIPTS"
+
+# Download official style.css
+wget -qO "$WAYBAR_DIR/style.css" https://raw.githubusercontent.com/Alexays/Waybar/master/resources/style.css
+
+# Write Waybar config.jsonc with custom WiFi module
+cat << 'EOF' > "$WAYBAR_DIR/config.jsonc"
+{
+  "modules-right": ["custom/network", "clock"],
+  "custom/network": {
+    "exec": "~/.config/waybar/scripts/wifi-status.sh",
+    "interval": 10,
+    "return-type": "json"
+  }
+}
+EOF
+
+# Create WiFi status script using iwd
+cat << 'EOF' > "$WAYBAR_SCRIPTS/wifi-status.sh"
+#!/bin/bash
+
+status=$(iwctl station wlan0 show 2>/dev/null)
+if [[ "$status" == *"connected network"* ]]; then
+    ssid=$(echo "$status" | awk -F': ' '/Connected network/ {print $2}')
+    ip=$(ip addr show wlan0 | awk '/inet / {print $2}' | cut -d/ -f1)
+    echo "{\"text\":\"$ssid\", \"tooltip\":\"IP: $ip\"}"
+else
+    echo '{"text":"Disconnected", "tooltip":"Not connected"}'
+fi
+EOF
+
+chmod +x "$WAYBAR_SCRIPTS/wifi-status.sh"
+chown -R "$username:$username" "$WAYBAR_DIR"
+
+echo ">> Waybar configuration complete!"
+
+# Disable systemd Waybar service to avoid duplicate bar
+sudo -u "$username" systemctl --user disable waybar --now 2>/dev/null || true
+
+# Install and configure additional packages
 echo ">> Installing GitHub CLI..."
 sudo pacman -S --noconfirm github-cli
 
@@ -140,6 +195,15 @@ Useful commands:
 - Type "kctxns" to switch to the current namespace in your Kubernetes context.
 - Type "kcfg" to add/remove/list/export Kubernetes context.
 - Type "k9s" to launch the K9s terminal UI for Kubernetes.
+--------------------------------------------
+WiFi
+--------------------------------------------
+- Type "iwctl station list" to get list of WiFi adapters
+- Type "iwctl station <station_name> get-networks" to get all available WiFi networks
+- Type "iwctl station <station_name> connect <network_name>" connect to WiFi AP
+- Type "iwctl station <station_name> show" to show WiFi AP connection info
+--------------------------------------------
+--------------------------------------------
 - Type "hello" to see this message again.
 
 Reload terminal or run "source ~/.zshrc" to apply all changes.
@@ -215,6 +279,26 @@ mkdir -p /home/$username/.config/hypr
 wget -O /home/$username/.config/hypr/hyprland.conf https://raw.githubusercontent.com/stsyg/dotfiles/linux/hyprland.conf
 chown -R $username:$username /home/$username/.config/hypr
 
+echo ">> Copying some wallpapers..."
+git clone https://github.com/HomeomorphicHooligan/arch-minimal-wallpapers.git ~/pictures/arch-wallpapers
+
+# Add custom WiFi indicator script for Waybar
+mkdir -p /home/$username/.config/waybar/scripts
+
+cat << 'EOF' > /home/$username/.config/waybar/scripts/wifi.sh
+#!/bin/bash
+SSID=$(iw dev | grep ssid | awk '{print $2}')
+SIGNAL=$(grep $(iw dev | awk '$1=="Interface"{print $2}') /proc/net/wireless | awk '{ print int($3 * 100 / 70) }')
+
+if [[ -z "$SSID" ]]; then
+  echo '{"text": "Disconnected", "tooltip": "WiFi not connected", "class": "disconnected"}'
+else
+  echo "{\"text\": \"$SSID ($SIGNAL%)\", \"tooltip\": \"Connected to $SSID\", \"class\": \"connected\"}"
+fi
+EOF
+
+chmod +x /home/$username/.config/waybar/scripts/wifi.sh
+chown -R $username:$username /home/$username/.config/waybar
 
 echo ">> Setting up aliases..."
 
