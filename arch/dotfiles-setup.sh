@@ -255,7 +255,7 @@ chown -R $username:$username /home/$username/.config/hypr
 
 # Wallpapers
 echo ">> Cloning wallpapers..."
-WALLPAPER_DIR="/home/$username/Pictures/arch-wallpapers"
+WALLPAPER_DIR="/home/$username/pictures/arch-wallpapers"
 rm -rf "$WALLPAPER_DIR"
 git clone --depth=1 https://github.com/HomeomorphicHooligan/arch-minimal-wallpapers.git "$WALLPAPER_DIR"
 chown -R "$username:$username" "$WALLPAPER_DIR"
