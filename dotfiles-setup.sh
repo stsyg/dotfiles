@@ -280,7 +280,19 @@ wget -O /home/$username/.config/hypr/hyprland.conf https://raw.githubusercontent
 chown -R $username:$username /home/$username/.config/hypr
 
 echo ">> Copying some wallpapers..."
-git clone https://github.com/HomeomorphicHooligan/arch-minimal-wallpapers.git ~/pictures/arch-wallpapers
+
+WALLPAPER_DIR="/home/$username/Pictures/arch-wallpapers"
+
+# If the wallpaper folder already exists, remove it
+if [ -d "$WALLPAPER_DIR" ]; then
+  rm -rf "$WALLPAPER_DIR"
+fi
+
+# Clone the repo fresh
+git clone --depth=1 https://github.com/HomeomorphicHooligan/arch-minimal-wallpapers.git "$WALLPAPER_DIR"
+
+chown -R "$username:$username" "$WALLPAPER_DIR"
+
 
 # Add custom WiFi indicator script for Waybar
 mkdir -p /home/$username/.config/waybar/scripts
