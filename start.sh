@@ -214,7 +214,7 @@ Here are some commands to get started:
 Make sure to reload your terminal or run "source ~/.bashrc" to apply all changes.
 --------------------------------------------
 EOF
-chown $username:$username "$HELLO_FILE"
+sudo chown $username:$username "$HELLO_FILE"
 
 # Display hello on first load
 sudo -u $username bash -i -c 'source ~/.bashrc && hello'
