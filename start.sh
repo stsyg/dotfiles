@@ -150,7 +150,6 @@ aliases=(
   'alias gc="git commit -m"'
   'alias gp="git push"'
   'alias ll="ls -la"'
-  'alias cat="batcat"'
   'alias k="kubectl"'
   'alias k9="k9s"'
   'alias kctx="kubectx"'
